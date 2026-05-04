@@ -477,7 +477,7 @@ async function renderSupervisorMain(body) {
 
 async function renderAttendanceStats() {
   const body=document.getElementById('dash-body');
-  body.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">\u23f3 \u062c\u0627\u0631\u064a \u0627\u0644\u062a\u062d\u0645\u064a\u0644...</div>';
+  body.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">⏳ \u062c\u0627\u0631\u064a \u0627\u0644\u062a\u062d\u0645\u064a\u0644...</div>';
   const {students}=await loadData();
 
   // load today, week(7 days), month(30 days) for all buses
@@ -517,7 +517,7 @@ async function renderAttendanceStats() {
           <div class="student-meta"><span class="bus-badge ${BUS_CLASS[s.bus]}">${BUS_EMOJI[s.bus]} ${BUS_NAMES[s.bus]}</span></div>
         </div>
         <span class="status-badge ${td==='present'?'badge-on':td==='absent'?'badge-off':''}" style="${!td?'background:#f5f5f5;color:#999':''}">
-          ${td==='present'?'\u2705 \u062d\u0627\u0636\u0631\u0629':td==='absent'?'\ud83d\udeab \u063a\u0627\u0626\u0628\u0629':'\u23f3 \u0644\u0645 \u064a\u064f\u0633\u062c\u064e\u0651\u0644'}
+          ${td==='present'?'\u2705 \u062d\u0627\u0636\u0631\u0629':td==='absent'?'\ud83d\udeab \u063a\u0627\u0626\u0628\u0629':'⏳ \u0644\u0645 \u064a\u064f\u0633\u062c\u064e\u0651\u0644'}
         </span>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px">
@@ -932,7 +932,7 @@ async function renderStudentMain(body) {
     <div class="dash-section" id="my-att-stats">
       <div class="dash-section-title">إحصائياتي</div>
       <div class="stat-row" style="margin-bottom:6px">
-        <div class="stat-box" style="border:1px solid var(--border)"><div class="stat-num" id="my-today" style="font-size:18px">\u23f3</div><div class="stat-lbl">اليوم</div></div>
+        <div class="stat-box" style="border:1px solid var(--border)"><div class="stat-num" id="my-today" style="font-size:18px">⏳</div><div class="stat-lbl">اليوم</div></div>
         <div class="stat-box" style="border:1px solid var(--border)"><div class="stat-num" id="my-week" style="font-size:18px">...</div><div class="stat-lbl">7 أيام</div></div>
         <div class="stat-box" style="border:1px solid var(--border)"><div class="stat-num" id="my-month" style="font-size:18px">...</div><div class="stat-lbl">30 يوم</div></div>
       </div>
@@ -965,47 +965,50 @@ async function renderStudentMain(body) {
     showToast('🚫 تم إبلاغ السائق بغيابك');
     loadMyStats();
   });
-  // Load personal attendance stats
-  async function loadMyStats() {
-    const bk='bus'+currentUser.bus;
-    const [td, wd, md] = await Promise.all([
-      getAttendance(bk),
-      getAttendanceRange(bk,7),
-      getAttendanceRange(bk,30)
-    ]);
-    const u=currentUser.user;
-    const todaySt=td[u];
-    const wStats=wd[u]||{present:0,absent:0};
-    const mStats=md[u]||{present:0,absent:0};
-    const pct=(p,t)=>t>0?Math.round(p/t*100):0;
-    const todayEl=document.getElementById('my-today');
-    const weekEl=document.getElementById('my-week');
-    const monthEl=document.getElementById('my-month');
-    const detailEl=document.getElementById('my-att-detail');
-    if(todayEl) todayEl.innerHTML=todaySt==='present'?'<span style="color:var(--green)">\u2705</span>':todaySt==='absent'?'<span style="color:var(--red)">🚫</span>':'<span style="color:var(--muted)">\u23f3</span>';
-    if(weekEl) weekEl.innerHTML='<span style="color:var(--green);font-size:14px">\u2705'+wStats.present+'</span> <span style="color:var(--red);font-size:14px">🚫'+wStats.absent+'</span>';
-    if(monthEl) monthEl.innerHTML='<span style="color:var(--green);font-size:14px">\u2705'+mStats.present+'</span> <span style="color:var(--red);font-size:14px">🚫'+mStats.absent+'</span>';
-    if(detailEl) detailEl.innerHTML=`
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center">
-        <div><div style="font-size:11px;color:var(--muted)">نسبة حضوري (7 أيام)</div><div style="font-size:22px;font-weight:900;color:${pct(wStats.present,wStats.present+wStats.absent)>=80?'var(--green)':'var(--red)'}">${pct(wStats.present,wStats.present+wStats.absent)}%</div></div>
-        <div><div style="font-size:11px;color:var(--muted)">نسبة حضوري (30 يوم)</div><div style="font-size:22px;font-weight:900;color:${pct(mStats.present,mStats.present+mStats.absent)>=80?'var(--green)':'var(--red)'}">${pct(mStats.present,mStats.present+mStats.absent)}%</div></div>
-      </div>`;
-  }
   loadMyStats();
-  document.getElementById('send-my-loc').addEventListener('click',()=>{
-    if(!navigator.geolocation){showToast('⚠️ GPS غير متاح');return;}
-    navigator.geolocation.getCurrentPosition(async pos=>{
-      const {latitude:lat,longitude:lng}=pos.coords;
-      await saveStudentLocation(currentUser.user,lat,lng);
-      showToast('📍 تم إرسال موقعك للسائق ✅');
-      const el=document.getElementById('my-loc-status');
-      if(el) el.innerHTML=`<div class="gps-pulse"><div class="gps-dot"></div>${lat.toFixed(4)}, ${lng.toFixed(4)}</div>`;
-      if(busDriver?.phone){
-        const waMsg=encodeURIComponent(`مرحباً، أنا ${currentUser.name} — موقعي الحالي: https://maps.google.com/?q=${lat},${lng} 📍 — تتبع آمن 🛡️`);
-        window.open(`https://wa.me/${busDriver.phone.replace(/^0/,'966')}?text=${waMsg}`,'_blank');
-      }
-    },()=>showToast('⚠️ تعذّر تحديد الموقع'));
-  });
+}
+async function loadMyStats() {
+  const bk='bus'+currentUser.bus;
+  const [td, wd, md] = await Promise.all([
+    getAttendance(bk),
+    getAttendanceRange(bk,7),
+    getAttendanceRange(bk,30)
+  ]);
+  const u=currentUser.user;
+  const todaySt=td[u];
+  const wStats=wd[u]||{present:0,absent:0};
+  const mStats=md[u]||{present:0,absent:0};
+  const pct=(p,t)=>t>0?Math.round(p/t*100):0;
+  const todayEl=document.getElementById('my-today');
+  const weekEl=document.getElementById('my-week');
+  const monthEl=document.getElementById('my-month');
+  const detailEl=document.getElementById('my-att-detail');
+  if(todayEl) todayEl.innerHTML=todaySt==='present'?'<span style="color:var(--green)">\u2705</span>':todaySt==='absent'?'<span style="color:var(--red)">🚫</span>':'<span style="color:var(--muted)">⏳</span>';
+  if(weekEl) weekEl.innerHTML='<span style="color:var(--green);font-size:14px">\u2705'+wStats.present+'</span> <span style="color:var(--red);font-size:14px">🚫'+wStats.absent+'</span>';
+  if(monthEl) monthEl.innerHTML='<span style="color:var(--green);font-size:14px">\u2705'+mStats.present+'</span> <span style="color:var(--red);font-size:14px">🚫'+mStats.absent+'</span>';
+  if(detailEl) detailEl.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center">
+      <div><div style="font-size:11px;color:var(--muted)">نسبة حضوري (7 أيام)</div><div style="font-size:22px;font-weight:900;color:${pct(wStats.present,wStats.present+wStats.absent)>=80?'var(--green)':'var(--red)'}">${pct(wStats.present,wStats.present+wStats.absent)}%</div></div>
+      <div><div style="font-size:11px;color:var(--muted)">نسبة حضوري (30 يوم)</div><div style="font-size:22px;font-weight:900;color:${pct(mStats.present,mStats.present+mStats.absent)>=80?'var(--green)':'var(--red)'}">${pct(mStats.present,mStats.present+mStats.absent)}%</div></div>
+    </div>`;
+}
+loadMyStats();
+document.getElementById('send-my-loc').addEventListener('click',()=>{
+  if(!navigator.geolocation){showToast('⚠️ GPS غير متاح');return;}
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    const {latitude:lat,longitude:lng}=pos.coords;
+    await saveStudentLocation(currentUser.user,lat,lng);
+    showToast('📍 تم إرسال موقعك للسائق ✅');
+    const el=document.getElementById('my-loc-status');
+    if(el) el.innerHTML=`<div class="gps-pulse"><div class="gps-dot"></div>${lat.toFixed(4)}, ${lng.toFixed(4)}</div>`;
+    if(busDriver?.phone){
+      const waMsg=encodeURIComponent(`مرحباً، أنا ${currentUser.name} — موقعي الحالي: https://maps.google.com/?q=${lat},${lng} 📍 — تتبع آمن 🛡️`);
+      window.open(`https://wa.me/${busDriver.phone.replace(/^0/,'966')}?text=${waMsg}`,'_blank');
+    }
+  },()=>showToast('⚠️ تعذّر تحديد الموقع'));
+});
+}
+
 }
 
 // ══ MODALS ══
